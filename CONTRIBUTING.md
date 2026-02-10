@@ -44,7 +44,7 @@ If you find a bug or have a feature request:
 
 - Keep PRs focused and small
 - Avoid unrelated refactors
-- Explain *why* the change is needed
+- Explain _why_ the change is needed
 - Link related issues if applicable
 
 ---

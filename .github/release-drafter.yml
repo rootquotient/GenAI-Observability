@@ -1,0 +1,43 @@
+template: |
+  ## What's Changed
+  $CHANGES
+  
+  ## Contributors
+  $CONTRIBUTORS
+
+categories:
+  - title: 'Features'
+    labels:
+      - 'feature'
+      - 'feat'
+  - title: 'Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bug'
+  - title: 'Maintenance'
+    labels:
+      - 'chore'
+      - 'refactor'
+      - 'test'
+  - title: 'Documentation'
+    labels:
+      - 'docs'
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'feat'
+  patch:
+    labels:
+      - 'patch'
+      - 'fix'
+      - 'bug'
+      - 'chore'
+
+exclude-labels:
+  - 'skip-changelog'

@@ -1,20 +1,32 @@
-v0.1 – Visibility
+# Roadmap
 
--  Middleware
--  Metrics
--  Cost estimation
+## v0.1 — MVP (Current)
 
-v0.2 – Awareness
+- [ ] SDK wrapper (OpenAI)
+- [ ] SQLite storage
+- [ ] CLI reports
+- [ ] Prompt hash drift detection
 
--  Prompt drift detection
--  Dashboards
--  Budget alerts
--  Provider comparison
-- 
+## v0.2 — Visibility & Export
 
-v0.3 – Control
+- [ ] PostgreSQL adapter
+- [ ] JSON/CSV export
+- [ ] Configurable pricing tables
 
--  Prompt versioning
--  Rollback support
--  CI/CD checks
+## v0.3 — Dashboard
 
+- [ ] React dashboard (reads same DB)
+- [ ] Time-series charts
+- [ ] Per-model comparison
+
+## v1.0 — Production Ready
+
+- [ ] Anthropic & Gemini providers
+- [ ] Prompt versioning
+- [ ] Cost anomaly detection
+
+## v2.0 — Enterprise (Long-term)
+
+- [ ] Proxy mode
+- [ ] SaaS deployment
+- [ ] RBAC and team dashboards
