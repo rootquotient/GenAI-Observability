@@ -2,9 +2,12 @@
   "name": "genai-observability",
   "version": "0.0.1",
   "description": "GenAI API Cost & Drift Monitor",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "type": "module",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "bin": {
+    "genai-monitor": "./dist/bin/genai-monitor.js"
+  },
   "files": [
     "dist"
   ],
