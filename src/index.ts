@@ -1,5 +1,5 @@
 export interface MonitorConfig {
-  storage?: string;
+  storage?: string; // TODO: sqllite db path
 }
 
 export class GenAIMonitor {
