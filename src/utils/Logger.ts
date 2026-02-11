@@ -4,8 +4,10 @@
  */
 export class Logger {
   private isDebug: boolean;
+  private prefix: string;
 
-  constructor(debug = false) {
+  constructor(prefix: string, debug = false) {
+    this.prefix = prefix;
     this.isDebug = debug;
   }
 
@@ -14,7 +16,7 @@ export class Logger {
    */
   info(message: string, ...args: unknown[]) {
     // biome-ignore lint/suspicious/noConsole: Logger utility intentionally uses console
-    console.log(`[GenAI-Obs] ℹ️ ${message}`, ...args);
+    console.log(`[GenAI-Obs][${this.prefix}] ℹ️ ${message}`, ...args);
   }
 
   /**
@@ -22,7 +24,7 @@ export class Logger {
    */
   error(message: string, ...args: unknown[]) {
     // biome-ignore lint/suspicious/noConsole: Logger utility intentionally uses console
-    console.error(`[GenAI-Obs] ❌ ${message}`, ...args);
+    console.error(`[GenAI-Obs][${this.prefix}] ❌ ${message}`, ...args);
   }
 
   /**
@@ -30,7 +32,7 @@ export class Logger {
    */
   warn(message: string, ...args: unknown[]) {
     // biome-ignore lint/suspicious/noConsole: Logger utility intentionally uses console
-    console.warn(`[GenAI-Obs] ⚠️ ${message}`, ...args);
+    console.warn(`[GenAI-Obs][${this.prefix}] ⚠️ ${message}`, ...args);
   }
 
   /**
@@ -39,7 +41,7 @@ export class Logger {
   debug(message: string, ...args: unknown[]) {
     if (this.isDebug) {
       // biome-ignore lint/suspicious/noConsole: Logger utility intentionally uses console
-      console.debug(`[GenAI-Obs] 🐛 ${message}`, ...args);
+      console.debug(`[GenAI-Obs][${this.prefix}] 🐛 ${message}`, ...args);
     }
   }
 }
