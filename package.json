@@ -45,7 +45,10 @@
   "size-limit": [
     {
       "path": "dist/**/*.js",
-      "limit": "10 kB"
+      "limit": "10 kB",
+      "ignore": [
+        "better-sqlite3"
+      ]
     }
   ],
   "tsup": {
@@ -59,7 +62,11 @@
     "dts": true,
     "splitting": false,
     "sourcemap": true,
-    "clean": true
+    "clean": true,
+    "platform": "node",
+    "external": [
+      "better-sqlite3"
+    ]
   },
   "lint-staged": {
     "*.{js,ts,mjs,cjs,json}": [
