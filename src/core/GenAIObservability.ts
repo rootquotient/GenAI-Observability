@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import type { GenAIProvider, LLMRequest, LLMResponse } from '@/providers/types';
 import { SQLiteStorage } from '@/storage/SQLiteStorage';
 import type { StorageInterface } from '@/storage/types';
@@ -12,6 +13,7 @@ export class GenAIObservability {
   private options: GenAIObservabilityOptions;
   private logger: Logger;
   private storage: StorageInterface | null = null;
+  private readonly storageInitPromise: Promise<void>;
 
   constructor(options: GenAIObservabilityOptions = {}) {
     this.options = {
@@ -22,7 +24,15 @@ export class GenAIObservability {
     this.logger = new Logger('GenAIObservability', this.options.debug);
 
     this.logger.debug('GenAIObservability initialized. We are live!!', this.options);
-    this.initializeStorage();
+    this.storageInitPromise = this.initializeStorage();
+  }
+
+  /**
+   * Hash the prompt to create a unique identifier without storing the raw text
+   */
+
+  private hashPrompt(prompt: string): string {
+    return createHash('sha256').update(prompt).digest('hex');
   }
 
   /**
@@ -43,6 +53,7 @@ export class GenAIObservability {
    * Track an LLM event. Save it for later analysis
    */
   public async trackEvent(event: LLMEvent): Promise<void> {
+    await this.storageInitPromise;
     if (!this.storage) {
       this.logger.warn('Storage not initialized. Event not tracked.');
       return;
@@ -78,6 +89,11 @@ export class GenAIObservability {
             );
             const latencyMs = Date.now() - startTime;
             const event = target.createEvent(request, response, latencyMs);
+            event.metadata = {
+              ...(event.metadata ?? {}),
+              requestType: prop,
+              promptHash: this.hashPrompt(request.prompt),
+            };
             void this.trackEvent(event);
             return response;
           };

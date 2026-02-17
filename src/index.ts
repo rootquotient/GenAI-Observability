@@ -8,18 +8,19 @@ export { OpenAIProvider } from '@/providers/OpenAIProvider';
 export type { GenAIProvider, LLMRequest, LLMResponse, ProviderOptions } from '@/providers/types';
 
 /**
- * Wraps an AI client (OpenAI, Anthropic, etc) to enable observability.
- * It's like a fitness tracker for your LLM calls.
+ * Wraps a GenAI provider adapter to enable observability
  *
  * @example
- * const openai = new OpenAI();
- * const monitoredOpenAI = createMonitor(openai, { debug: true });
+ * const sdk = new GenAIObservability({ debug: true });
+ * const provider = sdk.monitorProvider(new OpenAIProvider());
+ *
+ * await provider.initialize({ apiKey: process.env.OPENAI_API_KEY! });
+ * const res = await provider.chatComplete?.({ prompt: 'hello' });
  */
-export function createMonitor<T extends object>(client: T, options?: GenAIObservabilityOptions): T {
-  // Initialize the SDK in the background
-  const _sdk = new GenAIObservability(options);
-
-  // TODO: Implement Proxy logic to intercept method calls
-  // For now, returns the client as-is. It's a placebo
-  return client;
+export function createMonitor<T extends import('@/providers/types').GenAIProvider>(
+  provider: T,
+  options?: GenAIObservabilityOptions,
+): T {
+  const sdk = new GenAIObservability(options);
+  return sdk.monitorProvider(provider);
 }
