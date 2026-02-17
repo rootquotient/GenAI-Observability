@@ -45,7 +45,11 @@
   "size-limit": [
     {
       "path": "dist/**/*.js",
-      "limit": "10 kB"
+      "limit": "200 kB",
+      "ignore": [
+        "better-sqlite3",
+        "crypto"
+      ]
     }
   ],
   "tsup": {
@@ -59,7 +63,11 @@
     "dts": true,
     "splitting": false,
     "sourcemap": true,
-    "clean": true
+    "clean": true,
+    "platform": "node",
+    "external": [
+      "better-sqlite3"
+    ]
   },
   "lint-staged": {
     "*.{js,ts,mjs,cjs,json}": [
@@ -75,6 +83,7 @@
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
     "@size-limit/preset-small-lib": "^12.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.2.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
@@ -86,5 +95,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "openai": "^4.104.0"
   }
 }

@@ -39,7 +39,9 @@ jobs:
 
       - name: Validate Branch Name
         if: github.event_name == 'pull_request'
-        run: npx validate-branch-name
+        run: |
+          git checkout -B ${{ github.head_ref }}
+          npx validate-branch-name
         env:
           GITHUB_HEAD_REF: ${{ github.head_ref }}
 
