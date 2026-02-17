@@ -71,7 +71,7 @@
     "errorMsg": "Branch name must follow the pattern: type/description (e.g feat/new-feature, fix/bug-123)"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.3.14",
+    "@biomejs/biome": "2.4.2",
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
     "@size-limit/preset-small-lib": "^12.0.0",
