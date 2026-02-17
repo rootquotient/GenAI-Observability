@@ -47,7 +47,8 @@
       "path": "dist/**/*.js",
       "limit": "200 kB",
       "ignore": [
-        "better-sqlite3"
+        "better-sqlite3",
+        "crypto"
       ]
     }
   ],
