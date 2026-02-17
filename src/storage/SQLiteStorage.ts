@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { GenAIObservabilityError } from '@/core/errors';
+import { StorageError } from '@/core/errors';
 import type { LLMEvent } from '@/core/types';
 import { Logger } from '@/utils/Logger';
 import type { StorageInterface } from './types';
@@ -31,8 +31,9 @@ export class SQLiteStorage implements StorageInterface {
       this.createSchema();
       this.logger.info(`Connected to SQLite database at ${this.filePath}`);
     } catch (error) {
-      throw new GenAIObservabilityError(
+      throw new StorageError(
         `Failed to connect to SQLite database: ${(error as Error).message}`,
+        error,
       );
     }
   }
@@ -53,9 +54,7 @@ export class SQLiteStorage implements StorageInterface {
    */
   async saveEvent(event: LLMEvent): Promise<void> {
     if (!this.db) {
-      throw new GenAIObservabilityError(
-        'Database not connected. Did you forget to call connect()?',
-      );
+      throw new StorageError('Database not connected. Did you forget to call connect()?');
     }
 
     try {
@@ -83,9 +82,7 @@ export class SQLiteStorage implements StorageInterface {
       );
     } catch (error) {
       this.logger.error('Failed to save event', error as Error);
-      throw new GenAIObservabilityError(
-        `Failed to save event to SQLite: ${(error as Error).message}`,
-      );
+      throw new StorageError(`Failed to save event to SQLite: ${(error as Error).message}`, error);
     }
   }
 
@@ -94,7 +91,7 @@ export class SQLiteStorage implements StorageInterface {
    */
   async getEvents(filter?: Record<string, unknown>): Promise<LLMEvent[]> {
     if (!this.db) {
-      throw new GenAIObservabilityError('Database not connected');
+      throw new StorageError('Database not connected');
     }
 
     try {
@@ -144,8 +141,9 @@ export class SQLiteStorage implements StorageInterface {
       }));
     } catch (error) {
       this.logger.error('Failed to retrieve events', error as Error);
-      throw new GenAIObservabilityError(
+      throw new StorageError(
         `Failed to retrieve events from SQLite: ${(error as Error).message}`,
+        error,
       );
     }
   }

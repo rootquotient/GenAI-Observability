@@ -1,8 +1,11 @@
 import { GenAIObservability } from '@/core/GenAIObservability';
 import type { GenAIObservabilityOptions } from '@/core/types';
 
+export * from '@/core/errors';
 export { GenAIObservability } from '@/core/GenAIObservability';
 export type { GenAIObservabilityOptions } from '@/core/types';
+export { OpenAIProvider } from '@/providers/OpenAIProvider';
+export type { GenAIProvider, LLMRequest, LLMResponse, ProviderOptions } from '@/providers/types';
 
 /**
  * Wraps an AI client (OpenAI, Anthropic, etc) to enable observability.

@@ -37,3 +37,17 @@ export class ConfigurationError extends GenAIObservabilityError {
     Object.setPrototypeOf(this, ConfigurationError.prototype);
   }
 }
+
+export class ProviderError extends GenAIObservabilityError {
+  constructor(
+    message: string,
+    public readonly provider: string,
+    public readonly code?: string,
+    public readonly originalError?: unknown,
+  ) {
+    super(message);
+    this.name = 'ProviderError';
+
+    Object.setPrototypeOf(this, ProviderError.prototype);
+  }
+}

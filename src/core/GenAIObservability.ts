@@ -1,3 +1,4 @@
+import type { GenAIProvider, LLMRequest, LLMResponse } from '@/providers/types';
 import { SQLiteStorage } from '@/storage/SQLiteStorage';
 import type { StorageInterface } from '@/storage/types';
 import { Logger } from '@/utils/Logger';
@@ -53,6 +54,38 @@ export class GenAIObservability {
     } catch (error) {
       this.logger.error(`Failed to track event ${event.id}`, error as Error);
     }
+  }
+
+  /**
+   * Wrap a GenAIProvider to automatically capture latency and persist LLM events
+   */
+  public monitorProvider<T extends GenAIProvider>(provider: T): T {
+    return new Proxy(provider, {
+      get: (target, prop, receiver) => {
+        const value = Reflect.get(target, prop, receiver) as unknown;
+
+        // TODO: This is a bit hacky - we should have a more robust way to identify which methods to wrap
+        if (prop === 'complete' || prop === 'chatComplete' || prop === 'embed') {
+          if (typeof value !== 'function') {
+            return value;
+          }
+
+          return async (request: LLMRequest): Promise<LLMResponse> => {
+            const startTime = Date.now();
+            const response = await (value as (req: LLMRequest) => Promise<LLMResponse>).call(
+              target,
+              request,
+            );
+            const latencyMs = Date.now() - startTime;
+            const event = target.createEvent(request, response, latencyMs);
+            void this.trackEvent(event);
+            return response;
+          };
+        }
+
+        return value;
+      },
+    }) as T;
   }
 
   /**
