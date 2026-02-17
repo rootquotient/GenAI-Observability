@@ -1,0 +1,203 @@
+SDK-based Architecture  #1
+Problem statement
+Teams need a way to observe GenAI API usage (cost, latency, prompt drift) inside application code, without introducing network proxies, HTTP middleware, or external services. Existing approaches like reverse proxies or framework middleware add unnecessary complexity and are not well-suited for GenAI SDK calls that occur deep inside service layers.
+
+Proposed solution
+Implement GenAI Monitor as a Node.js SDK (npm package) that wraps GenAI provider SDKs. The SDK intercepts GenAI calls at the code level, captures metadata (tokens, latency, model, prompt hash), and stores metrics locally. A separate CLI reads this data for analysis and reporting.
+This approach keeps observability non-intrusive, developer-friendly, and easy to adopt.
+
+Alternatives considered
+HTTP middleware (Express/Fastify): rejected because GenAI calls do not align with HTTP lifecycle boundaries.
+Reverse proxy / sidecar service: rejected due to added latency, network complexity, and overkill for MVP.
+SaaS-based observability: rejected to keep the project open-source, local-first, and privacy-friendly.
+
+Additional context
+This design mirrors how logging and metrics libraries (e.g. database clients or APM agents) are integrated directly into application code rather than via proxies.
+
+
+
+
+Local-First Storage Using SQLite #2
+Problem statement
+What problem are you trying to solve?
+The SDK needs a reliable way to persist GenAI usage metrics (cost, latency, token counts, prompt hashes) so that they can be analyzed later via a CLI. This storage must be simple to set up, require minimal configuration, and work out of the box for individual developers and small teams.
+
+Proposed solution
+Use SQLite as the default local storage backend for the GenAI Monitor SDK. The SDK will create and manage a local SQLite database file to store metrics and metadata. The CLI will read from the same database to generate reports.
+SQLite provides an embedded, zero-configuration database that fits well with a CLI-first, local observability tool.
+
+Alternatives considered
+PostgreSQL: rejected for MVP due to setup and infrastructure overhead.
+File-based JSON logs: rejected due to lack of structure, poor aggregation support, and concurrency issues.
+In-memory storage: rejected because metrics would be lost between runs and unusable for CLI analysis.
+
+Additional context
+SQLite allows the project to remain local-first while still supporting a clean migration path to PostgreSQL or other databases in future versions via a storage adapter interface.
+
+
+
+Provider agnostic abstraction for GenAI APIs #3
+Problem statement
+The project needs to support multiple GenAI providers (OpenAI now, Anthropic and Gemini later) without duplicating monitoring logic or tightly coupling the SDK to a single vendor. Without a clear abstraction, adding new providers would require invasive changes across the codebase.
+
+Proposed solution
+Introduce a provider interface that defines a common contract for all GenAI providers. Each provider implementation (starting with OpenAI) will be responsible for:
+making the actual API call
+extracting usage metadata (tokens, model)
+returning the raw provider response
+The monitoring, cost calculation, storage, and CLI layers will depend only on this interface, not on provider-specific SDKs.
+
+Alternatives considered
+Provider-specific logic scattered across the codebase: rejected due to poor maintainability and high coupling.
+One-off wrappers per provider without a shared interface: rejected because it complicates future multi-provider support.
+Dynamic runtime introspection of provider responses: rejected due to brittleness and lack of type safety.
+
+Additional context
+This design follows common backend patterns used for databases or payment gateways, where adapters implement a shared interface while core logic remains provider-agnostic.
+
+Core Monitoring & Interception Layer #4
+Problem statement
+The SDK must capture observability data (latency, token usage, cost, prompt drift) for GenAI API calls without modifying application behavior. This requires a central interception point that measures execution, extracts metadata, and persists metrics while returning the original GenAI response unchanged.
+
+Proposed solution
+Implement a monitor layer that wraps provider calls. This layer will:
+Start a timer before invoking the provider
+Hash the prompt for drift detection
+Execute the provider API call
+Extract usage metadata from the response
+Estimate cost based on pricing tables
+Persist metrics to storage
+Return the original response to the caller
+
+Alternatives considered
+Have you considered other approaches?
+Modifying provider SDKs directly: rejected due to fragility and upgrade risk.
+Instrumenting calls at the HTTP layer: rejected because SDK calls may not map cleanly to HTTP boundaries.
+Post-processing logs after execution: rejected because it makes latency measurement and attribution unreliable.
+
+Additional context
+This interception model is similar to how database clients or APM agents wrap queries to collect metrics while remaining transparent to the application.
+
+
+Provider-aware cost estimation #5
+Problem statement
+GenAI providers charge based on token usage and model-specific pricing, but applications do not receive explicit cost information with each API call. Without estimating cost at call-time, teams lack visibility into how individual features, endpoints, or prompts impact overall GenAI spend.
+
+Proposed solution
+Implement a static, provider-aware pricing layer that maps models to per-token costs. During monitoring, the SDK will calculate estimated cost using:
+input token count
+output token count
+model-specific pricing configuration
+Pricing tables will be versioned and isolated from business logic, allowing easy updates as providers change prices.
+
+Alternatives considered
+Calling provider billing APIs in real time: rejected due to latency, complexity, and lack of per-request granularity.
+Estimating cost using averages: rejected because it reduces accuracy and trust.
+Ignoring cost in MVP: rejected because cost visibility is a primary project goal.
+
+Additional context
+Most production observability tools estimate cost client-side using published pricing tables, accepting minor discrepancies in exchange for transparency and immediate feedback.
+
+
+Privacy-preserving prompt drift detection #6
+
+Problem statement
+Prompt changes can silently alter GenAI behavior, leading to unexpected output differences in production. Teams need a way to detect when prompts change over time, while avoiding storage of sensitive prompt content or user data.
+
+Proposed solution
+Implement prompt drift detection using cryptographic hashing. Before sending a prompt to a GenAI provider, the SDK will generate a SHA-256 hash of the prompt text. Only the hash will be stored alongside request metadata.
+Drift is detected by observing changes in prompt hashes across time or deployments.
+
+Alternatives considered
+Storing full prompt text: rejected due to privacy, security, and compliance concerns.
+Semantic similarity or embedding-based drift detection: rejected for MVP due to complexity and additional cost.
+Manual version tagging by users: rejected to avoid developer burden.
+
+Additional context
+Hash-based drift detection provides a lightweight signal that prompts have changed, which is often sufficient for correlating cost, latency, or behavior changes in production.
+
+
+CLI-based reporting and analysis layer #7
+
+Problem statement
+Developers and product teams need an easy way to analyze GenAI usage metrics (cost, latency, prompt drift) without building dashboards or querying databases manually. The solution should work locally, integrate naturally with developer workflows, and avoid adding runtime overhead to production systems.
+
+Proposed solution
+Implement a CLI-based reporting layer that reads metrics from local storage and generates human-readable summaries. The CLI will provide commands such as:
+usage and cost summaries
+latency statistics
+prompt drift indicators
+The CLI operates independently of the SDK runtime and performs read-only analysis.
+
+Alternatives considered
+Web-based dashboards: rejected for MVP due to added frontend complexity.
+Exporting raw SQL queries only: rejected due to poor developer experience.
+Logging metrics directly to console: rejected because it prevents historical analysis.
+
+Additional context
+CLI-first observability tools align well with backend workflows and can later serve as the data source for dashboards or automated reports.
+
+Support for streaming GenAI responses #8
+
+Problem statement
+Many GenAI APIs support streaming responses, where tokens are returned incrementally instead of in a single response object. Without proper handling, the SDK cannot accurately measure latency, token usage, or cost for streamed calls, leading to incomplete or misleading observability data.
+
+Proposed solution
+Extend the monitoring layer to support streamed GenAI responses by:
+measuring latency from request start to stream completion
+accumulating token usage incrementally (where available)
+estimating cost after the stream finishes
+persisting a single aggregated metrics record per streamed request
+The SDK will expose streaming support transparently, without changing how users consume streamed responses.
+
+Alternatives considered
+Ignoring streaming support: rejected because streaming is commonly used in real-time applications.
+Disabling monitoring for streamed calls: rejected as it creates observability gaps.
+Storing per-chunk metrics: rejected for MVP due to increased complexity and limited analytical value.
+
+Additional context
+Streaming support will be implemented in a best-effort manner, depending on what usage metadata the provider exposes during or after the stream. Initial support will focus on OpenAI streaming APIs.
+
+Testing and validation #9
+
+Problem statement
+As a monitoring SDK that runs inside application code, it is critical to ensure correctness, stability, and non-intrusive behavior. Without a structured testing strategy, changes to cost calculation, hashing, or storage logic could introduce silent bugs or inaccurate metrics.
+
+Proposed solution
+Adopt a layered testing strategy:
+unit tests for utilities (hashing, timers, cost calculation)
+unit tests for repository and storage logic
+integration tests for the monitoring flow using mocked GenAI provider responses
+Tests will focus on verifying correctness of metrics capture while ensuring that original provider responses are returned unchanged.
+
+Alternatives considered
+Manual testing only: rejected due to lack of repeatability and regression protection.
+End-to-end testing against real GenAI APIs: rejected for cost, flakiness, and speed concerns.
+Snapshot testing of full responses: rejected to avoid coupling tests to provider output formats.
+
+Additional context
+Mock-based testing allows the project to validate observability logic independently of external API availability and pricing changes.
+
+Open-Source Readiness & npm Publishing #10
+
+Problem statement
+For the project to be usable and adoptable by other developers, it must be packaged, documented, and published correctly. Without proper npm configuration and OSS hygiene, even a well-designed SDK will be difficult to install, understand, or contribute to.
+
+Proposed solution
+Prepare the project for open-source distribution by:
+configuring npm publish metadata (main, types, bin)
+adding a .npmignore to exclude non-essential files
+ensuring CLI binaries are correctly exposed
+adding license and contribution guidelines
+validating installation and usage via npm install and npx
+This ensures the project can be consumed as both a library and a CLI tool.
+
+Alternatives considered
+Keeping the project private or unpublished: rejected because the goal is OSS.
+Publishing without CLI support: rejected because CLI is a core value proposition.
+Using monorepo tooling (Nx/Turbo): rejected for MVP due to added complexity.
+
+Additional context
+Well-prepared npm packages lower adoption friction and signal quality to users and contributors. This step also prepares the project for future community involvement.
+
+

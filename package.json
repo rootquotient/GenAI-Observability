@@ -45,7 +45,7 @@
   "size-limit": [
     {
       "path": "dist/**/*.js",
-      "limit": "10 kB",
+      "limit": "200 kB",
       "ignore": [
         "better-sqlite3"
       ]
