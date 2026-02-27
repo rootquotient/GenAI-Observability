@@ -4,6 +4,7 @@ import type { GenAIObservabilityOptions } from '@/core/types';
 export * from '@/core/errors';
 export { GenAIObservability } from '@/core/GenAIObservability';
 export type { GenAIObservabilityOptions } from '@/core/types';
+export * from '@/cost';
 export { OpenAIProvider } from '@/providers/OpenAIProvider';
 export type { GenAIProvider, LLMRequest, LLMResponse, ProviderOptions } from '@/providers/types';
 

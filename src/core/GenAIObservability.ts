@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { estimateCost } from '@/cost';
 import type { GenAIProvider, LLMRequest, LLMResponse } from '@/providers/types';
 import { SQLiteStorage } from '@/storage/SQLiteStorage';
 import type { StorageInterface } from '@/storage/types';
@@ -83,16 +84,31 @@ export class GenAIObservability {
 
           return async (request: LLMRequest): Promise<LLMResponse> => {
             const startTime = Date.now();
-            const response = await (value as (req: LLMRequest) => Promise<LLMResponse>).call(
+            const baseResponse = await (value as (req: LLMRequest) => Promise<LLMResponse>).call(
               target,
               request,
             );
             const latencyMs = Date.now() - startTime;
+            const costEstimation = estimateCost({
+              provider: target.name,
+              model: baseResponse.model,
+              promptTokens: baseResponse.usage.promptTokens,
+              completionTokens: baseResponse.usage.completionTokens,
+            });
+
+            const response = costEstimation
+              ? {
+                  ...baseResponse,
+                  usage: { ...baseResponse.usage, cost: costEstimation.costUsd },
+                }
+              : baseResponse;
+
             const event = target.createEvent(request, response, latencyMs);
             event.metadata = {
               ...(event.metadata ?? {}),
               requestType: prop,
               promptHash: this.hashPrompt(request.prompt),
+              pricingId: costEstimation?.pricingId,
             };
             void this.trackEvent(event);
             return response;
@@ -102,29 +118,5 @@ export class GenAIObservability {
         return value;
       },
     }) as T;
-  }
-
-  /**
-   * Access the cost monitoring module
-   * Because cloud bills are scary
-   */
-  public get cost() {
-    return {
-      track: (event: LLMEvent) => {
-        return this.trackEvent(event);
-      },
-    };
-  }
-
-  /**
-   * Access the drift detection module
-   * Keeping your model from going off the rails
-   */
-  public get drift() {
-    return {
-      detect: () => {
-        this.logger.debug('Drift detection requested (implementation pending)');
-      },
-    };
   }
 }
