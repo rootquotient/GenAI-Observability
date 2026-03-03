@@ -62,8 +62,8 @@ export class SQLiteStorage implements StorageInterface {
         INSERT INTO events (
           id, provider, model, timestamp, latency_ms,
           prompt_tokens, completion_tokens, total_tokens, cost,
-          metadata, input, output
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          prompt_hash, metadata, input, output
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run(
@@ -76,6 +76,7 @@ export class SQLiteStorage implements StorageInterface {
         event.usage.completionTokens,
         event.usage.totalTokens,
         event.usage.cost ?? null,
+        event.promptHash ?? null,
         JSON.stringify(event.metadata ?? {}),
         JSON.stringify(event.input ?? null),
         JSON.stringify(event.output ?? null),
@@ -118,6 +119,7 @@ export class SQLiteStorage implements StorageInterface {
         completion_tokens: number;
         total_tokens: number;
         cost: number | null;
+        prompt_hash: string | null;
         metadata: string;
         input: string;
         output: string;
@@ -135,6 +137,7 @@ export class SQLiteStorage implements StorageInterface {
           totalTokens: row.total_tokens,
           cost: row.cost ?? undefined,
         },
+        promptHash: row.prompt_hash ?? undefined,
         metadata: JSON.parse(row.metadata),
         input: JSON.parse(row.input),
         output: JSON.parse(row.output),
@@ -167,6 +170,7 @@ export class SQLiteStorage implements StorageInterface {
         completion_tokens INTEGER NOT NULL,
         total_tokens INTEGER NOT NULL,
         cost REAL,
+        prompt_hash TEXT,
         metadata TEXT,
         input TEXT,
         output TEXT
@@ -175,6 +179,7 @@ export class SQLiteStorage implements StorageInterface {
       CREATE INDEX IF NOT EXISTS idx_events_timestamp ON events(timestamp);
       CREATE INDEX IF NOT EXISTS idx_events_provider ON events(provider);
       CREATE INDEX IF NOT EXISTS idx_events_model ON events(model);
+      CREATE INDEX IF NOT EXISTS idx_events_prompt_hash ON events(prompt_hash);
     `);
   }
 }

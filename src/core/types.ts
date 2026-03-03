@@ -57,6 +57,9 @@ export interface LLMEvent {
   /** Token usage and cost details */
   usage: LLMUsage;
 
+  /** Cryptographic hash of the prompt for drift detection. Privacy-first! */
+  promptHash?: string;
+
   /** Additional metadata. Anything else you want to tag. */
   metadata?: Record<string, unknown>;
 

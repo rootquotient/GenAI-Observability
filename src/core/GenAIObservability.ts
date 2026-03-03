@@ -104,10 +104,10 @@ export class GenAIObservability {
               : baseResponse;
 
             const event = target.createEvent(request, response, latencyMs);
+            event.promptHash = this.hashPrompt(request.prompt);
             event.metadata = {
               ...(event.metadata ?? {}),
               requestType: prop,
-              promptHash: this.hashPrompt(request.prompt),
               pricingId: costEstimation?.pricingId,
             };
             void this.trackEvent(event);
