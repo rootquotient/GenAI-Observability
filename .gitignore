@@ -30,16 +30,26 @@ coverage/
 # SQLite / Local DB
 # =========================
 *.db
+*.db-journal
+*.db-shm
+*.db-wal
 *.sqlite
 *.sqlite3
-.genai-monitor.db
+.genai-observability.db
+genai-observability.db
+
+# =========================
+# Tool Caches
+# =========================
+.biome_cache/
+.eslintcache
+.cache/
+.tmp/
 
 # =========================
 # CLI runtime artifacts
 # =========================
-.genai-monitor/
-.cache/
-.tmp/
+.genai-observability/
 
 # =========================
 # OS files
