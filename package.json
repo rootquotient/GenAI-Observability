@@ -23,6 +23,9 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "genai-obs": "./dist/cli/index.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -45,13 +48,14 @@
   "size-limit": [
     {
       "path": "dist/**/*.js",
-      "limit": "10 kB"
+      "limit": "100 kB"
     }
   ],
   "tsup": {
-    "entry": [
-      "src/index.ts"
-    ],
+    "entry": {
+      "index": "src/index.ts",
+      "cli/index": "src/cli/index.ts"
+    },
     "format": [
       "cjs",
       "esm"
@@ -59,7 +63,11 @@
     "dts": true,
     "splitting": false,
     "sourcemap": true,
-    "clean": true
+    "clean": true,
+    "platform": "node",
+    "external": [
+      "better-sqlite3"
+    ]
   },
   "lint-staged": {
     "*.{js,ts,mjs,cjs,json}": [
@@ -75,10 +83,12 @@
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
     "@size-limit/preset-small-lib": "^12.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.2.2",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "size-limit": "^12.0.0",
+    "size-limit-node-esbuild": "^0.4.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.5.1",
     "typescript": "^5.3.3",
@@ -86,5 +96,12 @@
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "chalk": "^5.6.2",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.3",
+    "openai": "^4.104.0"
   }
 }

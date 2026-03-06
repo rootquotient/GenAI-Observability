@@ -2,10 +2,10 @@
 
 ## v0.1 — MVP (Current)
 
-- [ ] SDK wrapper (OpenAI)
-- [ ] SQLite storage
-- [ ] CLI reports
-- [ ] Prompt hash drift detection
+- [x] SDK wrapper (OpenAI)
+- [x] SQLite storage
+- [x] CLI reports
+- [x] Prompt hash drift detection
 
 ## v0.2 — Visibility & Export
 
