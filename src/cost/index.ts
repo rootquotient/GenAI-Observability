@@ -1,4 +1,4 @@
-export { estimateCost } from './estimateCost.js';
+export { estimateCost } from './estimateCost';
 export type {
   CostEstimationInput,
   CostEstimationResult,

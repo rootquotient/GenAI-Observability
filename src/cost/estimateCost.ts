@@ -1,5 +1,5 @@
-import { OPENAI_PRICING_V1 } from './openai.v1.js';
-import type { CostEstimationInput, CostEstimationResult, ProviderPricingTable } from './types.js';
+import { OPENAI_PRICING_V1 } from './openai.v1';
+import type { CostEstimationInput, CostEstimationResult, ProviderPricingTable } from './types';
 
 function normalizeModel(model: string): string {
   return model.trim().toLowerCase();

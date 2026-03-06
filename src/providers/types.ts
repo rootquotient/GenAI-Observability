@@ -50,6 +50,11 @@ export interface LLMRequest {
   temperature?: number;
 
   /**
+   * Whether to stream the response
+   */
+  stream?: boolean;
+
+  /**
    * Additional provider-specific parameters
    */
   [key: string]: unknown;
@@ -102,7 +107,7 @@ export interface GenAIProvider {
   /**
    * Create a chat completion (for conversational models)
    */
-  chatComplete?(request: LLMRequest): Promise<LLMResponse>;
+  chatComplete?(request: LLMRequest): Promise<LLMResponse> | AsyncIterable<LLMResponse>;
 
   /**
    * Generate embeddings from input text

@@ -73,7 +73,56 @@ export class OpenAIProvider implements GenAIProvider {
   /**
    * Make a chat completion request using OpenAI's chat API
    */
-  async chatComplete(request: LLMRequest): Promise<LLMResponse> {
+  chatComplete(request: LLMRequest): Promise<LLMResponse> | AsyncIterable<LLMResponse> {
+    if (!this.client) {
+      throw new ProviderError(
+        'OpenAI provider not initialized. Call initialize() first.',
+        this.name,
+        'NOT_INITIALIZED',
+      );
+    }
+
+    // Handle streaming responses
+    if (request.stream) {
+      return this.handleStream(request);
+    }
+
+    return (async () => {
+      try {
+        const chatCompletion = await this.client?.chat.completions.create({
+          model: request.model || this.options?.defaultModel || 'gpt-3.5-turbo',
+          messages: [{ role: 'user', content: request.prompt }],
+          max_tokens: request.maxTokens,
+          temperature: request.temperature,
+          stream: false, // Explicitly set stream to false for non-streaming
+        });
+
+        if (!chatCompletion) {
+          throw new ProviderError('Failed to create chat completion', this.name);
+        }
+
+        const usage = this.extractUsage(chatCompletion);
+        const content = chatCompletion.choices[0]?.message?.content || '';
+
+        return {
+          text: content,
+          model: chatCompletion.model,
+          usage,
+          rawResponse: chatCompletion,
+        };
+      } catch (error) {
+        this.logger.error('OpenAI chat completion request failed', error as Error);
+        throw new ProviderError(
+          'OpenAI chat completion request failed',
+          this.name,
+          undefined,
+          error,
+        );
+      }
+    })();
+  }
+
+  private async *handleStream(request: LLMRequest): AsyncIterable<LLMResponse> {
     if (!this.client) {
       throw new ProviderError(
         'OpenAI provider not initialized. Call initialize() first.',
@@ -83,25 +132,31 @@ export class OpenAIProvider implements GenAIProvider {
     }
 
     try {
-      const chatCompletion = await this.client.chat.completions.create({
+      const stream = await this.client.chat.completions.create({
         model: request.model || this.options?.defaultModel || 'gpt-3.5-turbo',
         messages: [{ role: 'user', content: request.prompt }],
         max_tokens: request.maxTokens,
         temperature: request.temperature,
+        stream: true,
       });
 
-      const usage = this.extractUsage(chatCompletion);
-      const content = chatCompletion.choices[0]?.message?.content || '';
+      let usage: LLMUsage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
 
-      return {
-        text: content,
-        model: chatCompletion.model,
-        usage,
-        rawResponse: chatCompletion,
-      };
+      for await (const chunk of stream) {
+        if (chunk.usage) {
+          usage = this.extractUsage(chunk);
+        }
+
+        yield {
+          text: chunk.choices[0]?.delta?.content || '',
+          model: chunk.model || request.model || '',
+          usage,
+          rawResponse: chunk,
+        };
+      }
     } catch (error) {
-      this.logger.error('OpenAI chat completion request failed', error as Error);
-      throw new ProviderError('OpenAI chat completion request failed', this.name, undefined, error);
+      this.logger.error('OpenAI stream request failed', error as Error);
+      throw new ProviderError('OpenAI stream request failed', this.name, undefined, error);
     }
   }
 

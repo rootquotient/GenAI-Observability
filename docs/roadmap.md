@@ -4,7 +4,7 @@
 
 - [x] SDK wrapper (OpenAI)
 - [x] SQLite storage
-- [ ] CLI reports
+- [x] CLI reports
 - [x] Prompt hash drift detection
 
 ## v0.2 — Visibility & Export

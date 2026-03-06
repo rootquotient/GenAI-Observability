@@ -82,8 +82,58 @@ export class GenAIObservability {
             return value;
           }
 
-          return async (request: LLMRequest): Promise<LLMResponse> => {
+          return async (request: LLMRequest): Promise<LLMResponse | AsyncIterable<LLMResponse>> => {
             const startTime = Date.now();
+
+            if (request.stream) {
+              const stream = await (
+                value as (req: LLMRequest) => Promise<AsyncIterable<LLMResponse>>
+              ).call(target, request);
+
+              // Return a new stream that wraps the original stream and tracks the event when it's done
+              const self = this;
+              async function* wrappedStream() {
+                let accumulatedResponse: LLMResponse | null = null;
+
+                for await (const chunk of stream) {
+                  if (!accumulatedResponse) {
+                    accumulatedResponse = { ...chunk, text: '' };
+                  }
+                  accumulatedResponse.text += chunk.text;
+                  accumulatedResponse.usage = chunk.usage;
+                  yield chunk;
+                }
+
+                if (accumulatedResponse) {
+                  const latencyMs = Date.now() - startTime;
+                  const costEstimation = estimateCost({
+                    provider: target.name,
+                    model: accumulatedResponse.model,
+                    promptTokens: accumulatedResponse.usage.promptTokens,
+                    completionTokens: accumulatedResponse.usage.completionTokens,
+                  });
+
+                  const finalResponse = costEstimation
+                    ? {
+                        ...accumulatedResponse,
+                        usage: { ...accumulatedResponse.usage, cost: costEstimation.costUsd },
+                      }
+                    : accumulatedResponse;
+
+                  const event = target.createEvent(request, finalResponse, latencyMs);
+                  event.promptHash = self.hashPrompt(request.prompt);
+                  event.metadata = {
+                    ...(event.metadata ?? {}),
+                    requestType: prop,
+                    pricingId: costEstimation?.pricingId,
+                  };
+                  void self.trackEvent(event);
+                }
+              }
+
+              return wrappedStream();
+            }
+
             const baseResponse = await (value as (req: LLMRequest) => Promise<LLMResponse>).call(
               target,
               request,
